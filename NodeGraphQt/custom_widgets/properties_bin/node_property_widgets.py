@@ -234,8 +234,13 @@ class NodePropWidget(QtWidgets.QWidget):
                 wid_type = model.get_widget_type(prop_name)
                 if wid_type == 0:
                     continue
+                
+                # Adding bypass to pass widgets directly from the property creation
+                if isinstance(wid_type, int):
+                    widget = widget_factory.get_widget(wid_type)
+                else:
+                    widget = wid_type() # Create widget if it is not an integer
 
-                widget = widget_factory.get_widget(wid_type)
                 if prop_name in common_props.keys():
                     if 'items' in common_props[prop_name].keys():
                         widget.set_items(common_props[prop_name]['items'])

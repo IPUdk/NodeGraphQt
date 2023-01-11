@@ -243,7 +243,7 @@ class NodePropWidget(QtWidgets.QWidget):
                     continue
                 
                 # Adding bypass to pass widgets directly from the property creation
-                if isinstance(wid_type, NodePropWidgetEnum) or isinstance(wid_type, int):
+                if isinstance(wid_type, int):
                     widget = widget_factory.get_widget(wid_type)
                 else:
                     widget = wid_type() # Create widget if it is not an integer

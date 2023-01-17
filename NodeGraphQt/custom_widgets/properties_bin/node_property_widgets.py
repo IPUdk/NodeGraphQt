@@ -5,6 +5,7 @@ from Qt import QtWidgets, QtCore, QtGui, QtCompat
 
 from .node_property_factory import NodePropertyWidgetFactory
 from .prop_widgets_base import PropLineEdit
+from NodeGraphQt.constants import NodePropWidgetEnum
 
 
 class _PropertiesDelegate(QtWidgets.QStyledItemDelegate):
@@ -232,11 +233,11 @@ class NodePropWidget(QtWidgets.QWidget):
             prop_window = self.__tab_windows[tab]
             for prop_name, value in tab_mapping[tab]:
                 wid_type = model.get_widget_type(prop_name)
-                if wid_type == 0:
+                if wid_type is None or wid_type == 0:
                     continue
                 
                 # Adding bypass to pass widgets directly from the property creation
-                if isinstance(wid_type, int):
+                if isinstance(wid_type, NodePropWidgetEnum) or isinstance(wid_type, int):
                     widget = widget_factory.get_widget(wid_type)
                 else:
                     widget = wid_type() # Create widget if it is not an integer

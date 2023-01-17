@@ -144,11 +144,13 @@ class _NumberValueEdit(QtWidgets.QLineEdit):
         self.valueChanged.emit(self.get_value())
 
     def _convert_text(self, text):
-        # int("1.0") will return error
-        # so we use int(float("1.0"))
-        try:
-            value = float(text)
-        except:
+        loc = QtCore.QLocale()
+        value = 0.0
+        succ = False
+        value, succ = loc.toDouble(str(text))
+        if not succ:
+            value, succ = loc.toInt(str(text))
+        if not succ:
             value = 0.0
         if self._data_type is int:
             value = int(value)
@@ -169,14 +171,18 @@ class _NumberValueEdit(QtWidgets.QLineEdit):
         self._menu.set_steps(steps)
 
     def get_value(self):
-        if self.text().startswith('.'):
+        loc = QtCore.QLocale()
+        sep = loc.decimalPoint()
+        if self.text().startswith(sep):
             text = '0' + self.text()
             self.setText(text)
         return self._convert_text(self.text())
 
     def set_value(self, value):
         if value != self.get_value():
-            self.setText(str(self._convert_text(value)))
+            loc = QtCore.QLocale()
+            val = loc.toString(self._convert_text(value))
+            self.setText(val)
 
 
 class IntValueEdit(_NumberValueEdit):

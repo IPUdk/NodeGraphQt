@@ -162,9 +162,12 @@ class NodeGraph(QtCore.QObject):
 
         self._context_menu = {}
 
-        self._register_context_menu()
-        self._register_builtin_nodes()
-        self._wire_signals()
+        if kwargs.get('register_context_menu', True):
+            self._register_context_menu()
+        if kwargs.get('register_builtin_nodes', True):
+            self._register_builtin_nodes()
+        if kwargs.get('wire_signals', True):
+            self._wire_signals()
 
     def __repr__(self):
         return '<{}("root") object at {}>'.format(

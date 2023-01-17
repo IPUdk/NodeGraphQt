@@ -21,19 +21,19 @@ class _PropertiesDelegate(QtWidgets.QStyledItemDelegate):
         painter.setRenderHint(QtGui.QPainter.Antialiasing, False)
         painter.setPen(QtCore.Qt.NoPen)
 
-        # draw background.
-        bg_clr = option.palette.midlight().color()
-        painter.setBrush(QtGui.QBrush(bg_clr))
-        painter.drawRect(option.rect)
+        # # draw background.
+        # bg_clr = option.palette.midlight().color()
+        # painter.setBrush(QtGui.QBrush(bg_clr))
+        # painter.drawRect(option.rect)
 
         # draw border.
         border_width = 1
-        if option.state & QtWidgets.QStyle.State_Selected:
-            bdr_clr = option.palette.highlight().color()
-            painter.setPen(QtGui.QPen(bdr_clr, 1.5))
-        else:
-            bdr_clr = option.palette.alternateBase().color()
-            painter.setPen(QtGui.QPen(bdr_clr, 1))
+        # if option.state & QtWidgets.QStyle.State_Selected:
+        #     bdr_clr = option.palette.highlight().color()
+        #     painter.setPen(QtGui.QPen(bdr_clr, 1.5))
+        # else:
+        #     bdr_clr = option.palette.alternateBase().color()
+        #     painter.setPen(QtGui.QPen(bdr_clr, 1))
 
         painter.setBrush(QtCore.Qt.NoBrush)
         painter.drawRect(QtCore.QRect(
@@ -174,15 +174,17 @@ class NodePropWidget(QtWidgets.QWidget):
         self.type_wgt.setFont(font)
 
         name_layout = QtWidgets.QHBoxLayout()
-        name_layout.setContentsMargins(0, 0, 0, 0)
+        #name_layout.setContentsMargins(0, 0, 0, 0)
         name_layout.addWidget(QtWidgets.QLabel('name'))
         name_layout.addWidget(self.name_wgt)
         name_layout.addWidget(close_btn)
+
         layout = QtWidgets.QVBoxLayout(self)
-        layout.setSpacing(4)
+        #layout.setSpacing(4)
         layout.addLayout(name_layout)
         layout.addWidget(self.__tab)
         layout.addWidget(self.type_wgt)
+
         self._read_node(node)
 
     def __repr__(self):
@@ -271,6 +273,11 @@ class NodePropWidget(QtWidgets.QWidget):
                                    prop_name.replace('_', ' '))
 
             widget.value_changed.connect(self._on_property_changed)
+        
+        # cnt = self.__tab.count() - 1
+        cnt = self.__tab.indexOf(prop_window)
+        self.__tab.setTabEnabled(cnt, False)
+        # self.__tab.setTabVisible(cnt, False)
 
         self.type_wgt.setText(model.get_property('type_'))
 

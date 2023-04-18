@@ -18,30 +18,61 @@ class NodeObject(object):
     The ``NodeGraphQt.NodeObject`` class is the main base class that all
     nodes inherit from.
 
-    **Inherited by:**
-        :class:`NodeGraphQt.BaseNode`,
-        :class:`NodeGraphQt.BackdropNode`
+    .. inheritance-diagram:: NodeGraphQt.NodeObject
 
     Args:
         qgraphics_item (AbstractNodeItem): QGraphicsItem item used for drawing.
-
-            .. code-block:: python
-
-                # snippet taken from the NodeGraphQt.BaseNode class.
-
-                class BaseNode(NodeObject):
-
-                    def __init__(self, qgraphics_item=None):
-                        qgraphics_item = qgraphics_item or NodeItem
-                        super(BaseNode, self).__init__(qgraphics_views)
-
     """
 
-    # Unique node identifier domain. `eg.` ``"io.github.jchanvfx"``
     __identifier__ = 'nodeGraphQt.nodes'
+    """
+    Unique node identifier domain. eg. ``"io.github.jchanvfx"``
 
-    # Base node name.
+    .. important:: re-implement this attribute to provide a unique node type.
+    
+        .. code-block:: python
+            :linenos:
+    
+            from NodeGraphQt import NodeObject
+    
+            class ExampleNode(NodeObject):
+    
+                # unique node identifier domain.
+                __identifier__ = 'io.github.jchanvfx'
+    
+                def __init__(self):
+                    ...
+    
+    :return: node type domain.
+    :rtype: str
+    
+    :meta hide-value:
+    """
+
     NODE_NAME = None
+    """
+    Initial base node name.
+
+    .. important:: re-implement this attribute to provide a base node name.
+    
+        .. code-block:: python
+            :linenos:
+    
+            from NodeGraphQt import NodeObject
+    
+            class ExampleNode(NodeObject):
+    
+                # initial default node name.
+                NODE_NAME = 'Example Node'
+    
+                def __init__(self):
+                    ...
+    
+    :return: node name
+    :rtype: str
+    
+    :meta hide-value:
+    """
 
     def __init__(self, qgraphics_item=None):
         """
@@ -73,10 +104,10 @@ class NodeObject(object):
     def type_(cls):
         """
         Node type identifier followed by the class name.
-        `eg.` ``"com.chantacticvfx.NodeObject"``
+        `eg.` ``"nodeGraphQt.nodes.NodeObject"``
 
         Returns:
-            str: node type.
+            str: node type (``__identifier__.__className__``)
         """
         return cls.__identifier__ + '.' + cls.__name__
 
@@ -86,7 +117,7 @@ class NodeObject(object):
         The node unique id.
 
         Returns:
-            str: unique id string.
+            str: unique identifier string to the node.
         """
         return self.model.id
 
@@ -96,7 +127,7 @@ class NodeObject(object):
         The parent node graph.
 
         Returns:
-            NodeGraphQt.NodeGraph: node graph.
+            NodeGraphQt.NodeGraph: node graph instance.
         """
         return self._graph
 
@@ -352,6 +383,10 @@ class NodeObject(object):
         """
         Set the value on the node custom property.
 
+        Note:
+            When setting the node ``"name"`` property a new unique name will be
+            used if another node in the graph has the same node name.
+
         Args:
             name (str): name of the property.
             value (object): property data (python built in types).
@@ -362,16 +397,22 @@ class NodeObject(object):
         if self.get_property(name) == value:
             return
 
+        # prevent nodes from have the same name.
         if self.graph and name == 'name':
             value = self.graph.get_unique_name(value)
             self.NODE_NAME = value
 
         if self.graph:
+            undo_cmd = PropertyChangedCmd(self, name, value)
+            if name == 'name':
+                undo_cmd.setText(
+                    'renamed "{}" to "{}"'.format(self.name(), value)
+                )
             if push_undo:
                 undo_stack = self.graph.undo_stack()
-                undo_stack.push(PropertyChangedCmd(self, name, value))
+                undo_stack.push(undo_cmd)
             else:
-                PropertyChangedCmd(self, name, value).redo()
+                undo_cmd.redo()
         else:
             if hasattr(self.view, name):
                 setattr(self.view, name, value)

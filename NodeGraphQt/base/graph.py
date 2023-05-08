@@ -150,7 +150,7 @@ class NodeGraph(QtCore.QObject):
 
         self._undo_view = None
         self._undo_stack = (
-            kwargs.get('undo_stack') or QtGui.QUndoStack(self))
+            kwargs.get('undo_stack') or QtWidgets.QUndoStack(self))
 
         self._widget = None
 

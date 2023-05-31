@@ -522,7 +522,7 @@ class NodeViewer(QtWidgets.QGraphicsView):
                 path.addRect(map_rect)
                 self._rubber_band.setGeometry(rect)
                 self.scene().setSelectionArea(
-                    path, QtCore.Qt.ItemSelectionMode.IntersectsItemShape
+                    path, QtCore.Qt.ItemSelectionOperation.AddToSelection ,QtCore.Qt.ItemSelectionMode.IntersectsItemShape
                 )
                 self.scene().update(map_rect)
 

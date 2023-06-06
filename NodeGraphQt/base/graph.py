@@ -136,6 +136,17 @@ class NodeGraph(QtCore.QObject):
         self.setObjectName('NodeGraph')
         self._model = (
             kwargs.get('model') or NodeGraphModel())
+        self._node_factory = (
+            kwargs.get('node_factory') or NodeFactory())
+        self._undo_view = None
+        self._undo_stack = (
+            kwargs.get('undo_stack') or QtWidgets.QUndoStack(self)
+        )
+        self._widget = None
+        self._sub_graphs = {}
+        self._viewer = (
+            kwargs.get('viewer') or NodeViewer(undo_stack=self._undo_stack)
+        )
 
         layout_direction = kwargs.get('layout_direction')
         if layout_direction:
@@ -144,21 +155,21 @@ class NodeGraph(QtCore.QObject):
             self._model.layout_direction = layout_direction
         else:
             layout_direction = self._model.layout_direction
-
-        self._node_factory = (
-            kwargs.get('node_factory') or NodeFactory())
-
-        self._undo_view = None
-        self._undo_stack = (
-            kwargs.get('undo_stack') or QtGui.QUndoStack(self))
-
-        self._widget = None
-
-        self._sub_graphs = {}
-
-        self._viewer = (
-            kwargs.get('viewer') or NodeViewer(undo_stack=self._undo_stack))
         self._viewer.set_layout_direction(layout_direction)
+
+        pipe_style = kwargs.get('pipe_style')
+        if pipe_style is not None:
+            if pipe_style not in [e.value for e in PipeLayoutEnum]:
+                pipe_style = PipeLayoutEnum.CURVED.value
+            self._model.pipe_style = pipe_style
+        else:
+            pipe_style = self._model.pipe_style
+        self._viewer.set_pipe_layout(pipe_style)
+
+        # viewer needs a reference to the model port connection constrains
+        # for the user interaction with the live pipe.
+        self._viewer.accept_connection_types = self._model.accept_connection_types
+        self._viewer.reject_connection_types = self._model.reject_connection_types
 
         self._context_menu = {}
 
@@ -877,9 +888,9 @@ class NodeGraph(QtCore.QObject):
         """
         return self._model.acyclic
 
-    def set_acyclic(self, mode=False):
+    def set_acyclic(self, mode=True):
         """
-        Enable the node graph to be a acyclic graph. (default: ``False``)
+        Enable the node graph to be a acyclic graph. (default: ``True``)
 
         See Also:
             :meth:`NodeGraph.acyclic`
@@ -930,7 +941,7 @@ class NodeGraph(QtCore.QObject):
         Returns:
             bool: True if pipe slicing is enabled.
         """
-        return self._model.pipe_collision
+        return self._model.pipe_slicing
 
     def set_pipe_slicing(self, mode=True):
         """
@@ -950,6 +961,18 @@ class NodeGraph(QtCore.QObject):
         """
         self._model.pipe_slicing = mode
         self._viewer.pipe_slicing = self._model.pipe_slicing
+
+    def pipe_style(self):
+        """
+        Returns the current pipe layout style.
+
+        See Also:
+            :meth:`NodeGraph.set_pipe_style`
+
+        Returns:
+            int: pipe style value. :attr:`NodeGraphQt.constants.PipeLayoutEnum`
+        """
+        return self._model.pipe_style
 
     def set_pipe_style(self, style=PipeLayoutEnum.CURVED.value):
         """
@@ -974,6 +997,7 @@ class NodeGraph(QtCore.QObject):
                         PipeLayoutEnum.STRAIGHT.value,
                         PipeLayoutEnum.ANGLE.value])
         style = style if 0 <= style <= pipe_max else PipeLayoutEnum.CURVED.value
+        self._model.pipe_style = style
         self._viewer.set_pipe_layout(style)
 
     def layout_direction(self):
@@ -988,7 +1012,7 @@ class NodeGraph(QtCore.QObject):
         Returns:
             int: layout direction.
         """
-        return self.model.layout_direction
+        return self._model.layout_direction
 
     def set_layout_direction(self, direction):
         """
@@ -1146,6 +1170,39 @@ class NodeGraph(QtCore.QObject):
                     node_attrs[node.type_][pname].update(pattrs)
                 self.model.set_node_common_properties(node_attrs)
 
+            accept_types = node.model.__dict__.pop(
+                '_TEMP_accept_connection_types'
+            )
+            for ptype, pdata in accept_types.get(node.type_, {}).items():
+                for pname, accept_data in pdata.items():
+                    for accept_ntype, accept_ndata in accept_data.items():
+                        for accept_ptype, accept_pnames in accept_ndata.items():
+                            for accept_pname in accept_pnames:
+                                self._model.add_port_accept_connection_type(
+                                    port_name=pname,
+                                    port_type=ptype,
+                                    node_type=node.type_,
+                                    accept_pname=accept_pname,
+                                    accept_ptype=accept_ptype,
+                                    accept_ntype=accept_ntype
+                                )
+            reject_types = node.model.__dict__.pop(
+                '_TEMP_reject_connection_types'
+            )
+            for ptype, pdata in reject_types.get(node.type_, {}).items():
+                for pname, reject_data in pdata.items():
+                    for reject_ntype, reject_ndata in reject_data.items():
+                        for reject_ptype, reject_pnames in reject_ndata.items():
+                            for reject_pname in reject_pnames:
+                                self._model.add_port_reject_connection_type(
+                                    port_name=pname,
+                                    port_type=ptype,
+                                    node_type=node.type_,
+                                    reject_pname=reject_pname,
+                                    reject_ptype=reject_ptype,
+                                    reject_ntype=reject_ntype
+                                )
+
             node.NODE_NAME = self.get_unique_name(name or node.NODE_NAME)
             node.model.name = node.NODE_NAME
             node.model.selected = selected
@@ -1209,6 +1266,39 @@ class NodeGraph(QtCore.QObject):
             for pname, pattrs in prop_attrs.items():
                 node_attrs[node.type_][pname].update(pattrs)
             self.model.set_node_common_properties(node_attrs)
+
+        accept_types = node.model.__dict__.pop(
+            '_TEMP_accept_connection_types'
+        )
+        for ptype, pdata in accept_types.get(node.type_, {}).items():
+            for pname, accept_data in pdata.items():
+                for accept_ntype, accept_ndata in accept_data.items():
+                    for accept_ptype, accept_pnames in accept_ndata.items():
+                        for accept_pname in accept_pnames:
+                            self._model.add_port_accept_connection_type(
+                                port_name=pname,
+                                port_type=ptype,
+                                node_type=node.type_,
+                                accept_pname=accept_pname,
+                                accept_ptype=accept_ptype,
+                                accept_ntype=accept_ntype
+                            )
+        reject_types = node.model.__dict__.pop(
+            '_TEMP_reject_connection_types'
+        )
+        for ptype, pdata in reject_types.get(node.type_, {}).items():
+            for pname, reject_data in pdata.items():
+                for reject_ntype, reject_ndata in reject_data.items():
+                    for reject_ptype, reject_pnames in reject_ndata.items():
+                        for reject_pname in reject_pnames:
+                            self._model.add_port_reject_connection_type(
+                                port_name=pname,
+                                port_type=ptype,
+                                node_type=node.type_,
+                                reject_pname=reject_pname,
+                                reject_ptype=reject_ptype,
+                                reject_ntype=reject_ntype
+                            )
 
         node._graph = self
         node.NODE_NAME = self.get_unique_name(node.NODE_NAME)
@@ -1326,7 +1416,9 @@ class NodeGraph(QtCore.QObject):
             return
         node_ids = [n.id for n in nodes]
         if push_undo:
-            self._undo_stack.beginMacro('deleted "{}" nodes'.format(len(nodes)))
+            self._undo_stack.beginMacro(
+                'deleted "{}" node(s)'.format(len(nodes))
+            )
         for node in nodes:
 
             # collapse group node before removing.
@@ -1353,6 +1445,54 @@ class NodeGraph(QtCore.QObject):
         if push_undo:
             self._undo_stack.endMacro()
         self.nodes_deleted.emit(node_ids)
+
+    def extract_nodes(self, nodes, push_undo=True, prompt_warning=True):
+        """
+        Extract select nodes from it connections.
+
+        Args:
+            nodes (list[NodeGraphQt.BaseNode]): list of node instances.
+            push_undo (bool): register the command to the undo stack. (default: True)
+            prompt_warning (bool): prompt warning dialog box.
+        """
+        if not nodes:
+            return
+
+        locked_ports = []
+        base_nodes = []
+        for node in nodes:
+            if not isinstance(node, BaseNode):
+                continue
+
+            for port in node.input_ports() + node.output_ports():
+                if port.locked():
+                    locked_ports.append('{0.node.name}: {0.name}'.format(port))
+
+            base_nodes.append(node)
+
+        if locked_ports:
+            message = (
+                'Selected nodes cannot be extracted because the following '
+                'ports are locked:\n{}'.format('\n'.join(sorted(locked_ports)))
+            )
+            if prompt_warning:
+                self._viewer.message_dialog(message, 'Can\'t Extract Nodes')
+            return
+
+        if push_undo:
+            self._undo_stack.beginMacro(
+                'extracted "{}" node(s)'.format(len(nodes))
+            )
+
+        for node in base_nodes:
+            for port in node.input_ports() + node.output_ports():
+                for connected_port in port.connected_ports():
+                    if connected_port.node() in base_nodes:
+                        continue
+                    port.disconnect_from(connected_port, push_undo=push_undo)
+
+        if push_undo:
+            self._undo_stack.endMacro()
 
     def all_nodes(self):
         """
@@ -1506,6 +1646,11 @@ class NodeGraph(QtCore.QObject):
         serial_data['graph']['acyclic'] = self.acyclic()
         serial_data['graph']['pipe_collision'] = self.pipe_collision()
         serial_data['graph']['pipe_slicing'] = self.pipe_slicing()
+        serial_data['graph']['pipe_style'] = self.pipe_style()
+
+        # connection constrains.
+        serial_data['graph']['accept_connection_types'] = self.model.accept_connection_types
+        serial_data['graph']['reject_connection_types'] = self.model.reject_connection_types
 
         # serialize nodes.
         for n in nodes:
@@ -1570,6 +1715,14 @@ class NodeGraph(QtCore.QObject):
                 self.set_pipe_collision(attr_value)
             elif attr_name == 'pipe_slicing':
                 self.set_pipe_slicing(attr_value)
+            elif attr_name == 'pipe_style':
+                self.set_pipe_style(attr_value)
+
+            # connection constrains.
+            elif attr_name == 'accept_connection_types':
+                self.model.accept_connection_types = attr_value
+            elif attr_name == 'reject_connection_types':
+                self.model.reject_connection_types = attr_value
 
         # build the nodes.
         nodes = {}
@@ -2188,10 +2341,14 @@ class NodeGraph(QtCore.QObject):
         # build new sub graph.
         node_factory = copy.deepcopy(self.node_factory)
         layout_direction = self.layout_direction()
+        kwargs = {
+            'layout_direction': self.layout_direction(),
+            'pipe_style': self.pipe_style(),
+        }
         sub_graph = SubGraph(self,
                              node=node,
                              node_factory=node_factory,
-                             layout_direction=layout_direction)
+                             **kwargs)
 
         # populate the sub graph.
         session = node.get_sub_graph_session()

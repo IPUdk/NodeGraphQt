@@ -164,7 +164,7 @@ class PipeEnum(Enum):
     #: default color.
     COLOR = (29, 105, 120, 255) # (175, 95, 30, 255)
     #: pipe color to a node when it's disabled.
-    DISABLED_COLOR =  (47, 171, 196, 255) # (190, 20, 20, 255)
+    DISABLED_COLOR = (200, 60, 60, 255)
     #: pipe color when selected or mouse over.
     ACTIVE_COLOR = (29, 105, 120, 255) # (70, 255, 220, 255)
     #: pipe color to a node when it's selected.

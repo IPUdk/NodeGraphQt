@@ -7,7 +7,12 @@ from qtpy import QtGui, QtCore, QtWidgets
 
 from NodeGraphQt.base.menu import BaseMenu
 from NodeGraphQt.constants import (
-    LayoutDirectionEnum, PortTypeEnum, PipeLayoutEnum
+    LayoutDirectionEnum,
+    PortTypeEnum,
+    PipeEnum,
+    PipeLayoutEnum,
+    ViewerEnum,
+    Z_VAL_PIPE,
 )
 from NodeGraphQt.qgraphics.node_abstract import AbstractNodeItem
 from NodeGraphQt.qgraphics.node_backdrop import BackdropNodeItem
@@ -84,10 +89,25 @@ class NodeViewer(QtWidgets.QGraphicsView):
         self._prev_selection_nodes = []
         self._prev_selection_pipes = []
         self._node_positions = {}
+
         self._rubber_band = QtWidgets.QRubberBand(
             QtWidgets.QRubberBand.Shape.Rectangle, self
         )
         self._rubber_band.isActive = False
+
+        text_color = QtGui.QColor(*tuple(map(
+            lambda i, j: i - j, (255, 255, 255),
+            ViewerEnum.BACKGROUND_COLOR.value
+        )))
+        text_color.setAlpha(50)
+        self._cursor_text = QtWidgets.QGraphicsTextItem()
+        self._cursor_text.setFlag(self._cursor_text.ItemIsSelectable, False)
+        self._cursor_text.setDefaultTextColor(text_color)
+        self._cursor_text.setZValue(Z_VAL_PIPE - 1)
+        font = self._cursor_text.font()
+        font.setPointSize(7)
+        self._cursor_text.setFont(font)
+        self.scene().addItem(self._cursor_text)
 
         self._LIVE_PIPE = LivePipeItem()
         self._LIVE_PIPE.setVisible(False)
@@ -131,6 +151,11 @@ class NodeViewer(QtWidgets.QGraphicsView):
         self.CTRL_state = False
         self.SHIFT_state = False
         self.COLLIDING_state = False
+
+        # connection constrains.
+        # TODO: maybe this should be a reference to the graph model instead?
+        self.accept_connection_types = None
+        self.reject_connection_types = None
 
     def __repr__(self):
         return '<{}() object at {}>'.format(
@@ -385,25 +410,62 @@ class NodeViewer(QtWidgets.QGraphicsView):
             return
 
         items = self._items_near(map_pos, None, 20, 20)
-        nodes = [i for i in items if isinstance(i, AbstractNodeItem)]
-        # pipes = [i for i in items if isinstance(i, PipeItem)]
+        pipes = []
+        nodes = []
+        backdrop = None
+        for itm in items:
+            if isinstance(itm, PipeItem):
+                pipes.append(itm)
+            elif isinstance(itm, AbstractNodeItem):
+                if isinstance(itm, BackdropNodeItem):
+                    backdrop = itm
+                    continue
+                nodes.append(itm)
 
         if nodes:
             self.MMB_state = False
 
-        # toggle extend node selection.
+        # record the node selection as "self.selected_nodes()" is not updated
+        # here on the mouse press event.
+        selection = set([])
+
         if self.LMB_state:
+            # toggle extend node selection.
             if self.SHIFT_state:
-                for node in nodes:
-                    node.selected = not node.selected
+                if items and backdrop == items[0]:
+                    backdrop.selected = not backdrop.selected
+                    if backdrop.selected:
+                        selection.add(backdrop)
+                    for n in backdrop.get_nodes():
+                        n.selected = backdrop.selected
+                        if backdrop.selected:
+                            selection.add(n)
+                else:
+                    for node in nodes:
+                        node.selected = not node.selected
+                        if node.selected:
+                            selection.add(node)
+            # unselected nodes with the "ctrl" key.
             elif self.CTRL_state:
+                if items and backdrop == items[0]:
+                    backdrop.selected = False
+                else:
+                    for node in nodes:
+                        node.selected = False
+            # if no modifier keys then add to selection set.
+            else:
+                if backdrop:
+                    selection.add(backdrop)
+                    for n in backdrop.get_nodes():
+                        selection.add(n)
                 for node in nodes:
-                    node.selected = False
+                    if node.selected:
+                        selection.add(node)
+
+        selection.update(self.selected_nodes())
 
         # update the recorded node positions.
-        self._node_positions.update(
-            {n: n.xy_pos for n in self.selected_nodes()}
-        )
+        self._node_positions.update({n: n.xy_pos for n in selection})
 
         # show selection selection marquee.
         if self.LMB_state and not items:
@@ -414,7 +476,24 @@ class NodeViewer(QtWidgets.QGraphicsView):
             self._rubber_band.setGeometry(rect)
             self._rubber_band.isActive = True
 
-        if self.LMB_state and (self.SHIFT_state or self.CTRL_state):
+        # stop here so we don't select a node.
+        # (ctrl modifier can be used for something else in future.)
+        if self.CTRL_state:
+            return
+
+        # allow new live pipe with the shift modifier on port that allow
+        # for multi connection.
+        if self.SHIFT_state:
+            if pipes:
+                pipes[0].reset()
+                port = pipes[0].port_from_pos(map_pos, reverse=True)
+                if not port.locked and port.multi_connection:
+                    self._cursor_text.setPlainText('')
+                    self._cursor_text.setVisible(False)
+                    self.start_live_connection(port)
+
+            # return here as the default behaviour unselects nodes with
+            # the shift modifier.
             return
 
         if not self._LIVE_PIPE.isVisible():
@@ -510,6 +589,11 @@ class NodeViewer(QtWidgets.QGraphicsView):
             current_pos = self.mapToScene(event.pos())
             delta = previous_pos - current_pos
             self._set_viewer_pan(delta.x(), delta.y())
+
+        if not self.ALT_state:
+            if self.SHIFT_state or self.CTRL_state:
+                if not self._LIVE_PIPE.isVisible():
+                    self._cursor_text.setPos(self.mapToScene(event.pos()))
 
         if self.LMB_state and self._rubber_band.isActive:
             rect = QtCore.QRect(self._origin_pos, event.pos()).normalized()
@@ -615,6 +699,26 @@ class NodeViewer(QtWidgets.QGraphicsView):
             self.ALT_state = True
             self.SHIFT_state = True
 
+        if self._LIVE_PIPE.isVisible():
+            super(NodeViewer, self).keyPressEvent(event)
+            return
+
+        # show cursor text
+        overlay_text = None
+        self._cursor_text.setVisible(False)
+        if not self.ALT_state:
+            if self.SHIFT_state:
+                overlay_text = '\n    SHIFT:\n    Toggle/Extend Selection'
+            elif self.CTRL_state:
+                overlay_text = '\n    CTRL:\n    Deselect Nodes'
+        elif self.ALT_state and self.SHIFT_state:
+            if self.pipe_slicing:
+                overlay_text = '\n    ALT + SHIFT:\n    Pipe Slicer Enabled'
+        if overlay_text:
+            self._cursor_text.setPlainText(overlay_text)
+            self._cursor_text.setPos(self.mapToScene(self._previous_pos))
+            self._cursor_text.setVisible(True)
+
         super(NodeViewer, self).keyPressEvent(event)
 
     def keyReleaseEvent(self, event):
@@ -632,12 +736,16 @@ class NodeViewer(QtWidgets.QGraphicsView):
         self.SHIFT_state = event.modifiers() == QtCore.Qt.KeyboardModifier.ShiftModifier
         super(NodeViewer, self).keyReleaseEvent(event)
 
+        # hide and reset cursor text.
+        self._cursor_text.setPlainText('')
+        self._cursor_text.setVisible(False)
+
     # --- scene events ---
 
     def sceneMouseMoveEvent(self, event):
         """
         triggered mouse move event for the scene.
-         - redraw the connection pipe.
+         - redraw the live connection pipe.
 
         Args:
             event (QtWidgets.QGraphicsSceneMouseEvent):
@@ -649,15 +757,38 @@ class NodeViewer(QtWidgets.QGraphicsView):
             return
 
         pos = event.scenePos()
-        items = self.scene().items(pos)
-        if items and isinstance(items[0], PortItem):
-            x = items[0].boundingRect().width() / 2
-            y = items[0].boundingRect().height() / 2
-            pos = items[0].scenePos()
+        pointer_color = None
+        for item in self.scene().items(pos):
+            if not isinstance(item, PortItem):
+                continue
+
+            x = item.boundingRect().width() / 2
+            y = item.boundingRect().height() / 2
+            pos = item.scenePos()
             pos.setX(pos.x() + x)
             pos.setY(pos.y() + y)
+            if item == self._start_port:
+                break
+            pointer_color = PipeEnum.HIGHLIGHT_COLOR.value
+            accept = self._validate_accept_connection(self._start_port, item)
+            if not accept:
+                pointer_color = [150, 60, 255]
+                break
+            reject = self._validate_reject_connection(self._start_port, item)
+            if reject:
+                pointer_color = [150, 60, 255]
+                break
 
-        self._LIVE_PIPE.draw_path(self._start_port, cursor_pos=pos)
+            if self.acyclic:
+                if item.node == self._start_port.node:
+                    pointer_color = PipeEnum.DISABLED_COLOR.value
+                elif item.port_type == self._start_port.port_type:
+                    pointer_color = PipeEnum.DISABLED_COLOR.value
+            break
+
+        self._LIVE_PIPE.draw_path(
+            self._start_port, cursor_pos=pos, color=pointer_color
+        )
 
     def sceneMousePressEvent(self, event):
         """
@@ -760,6 +891,78 @@ class NodeViewer(QtWidgets.QGraphicsView):
 
     # --- port connections ---
 
+    def _validate_accept_connection(self, from_port, to_port):
+        """
+        Check if a pipe connection is allowed if there are a constrains set
+        on the ports.
+
+        Args:
+            from_port (PortItem):
+            to_port (PortItem):
+
+        Returns:
+            bool: true to allow connection.
+        """
+        to_ptype = to_port.port_type
+        from_ptype = from_port.port_type
+
+        to_data = self.accept_connection_types.get(to_port.node.type_) or {}
+        constraints = to_data.get(to_ptype, {}).get(to_port.name, {})
+        accept_data = constraints.get(from_port.node.type_, {})
+
+        accepted_pnames = accept_data.get(from_ptype)
+        if accepted_pnames:
+            if from_port.name in accepted_pnames:
+                return True
+            return False
+
+        from_data = self.accept_connection_types.get(from_port.node.type_) or {}
+        constraints = from_data.get(from_ptype, {}).get(from_port.name, {})
+        accept_data = constraints.get(to_port.node.type_, {})
+
+        accepted_pnames = accept_data.get(to_ptype)
+        if accepted_pnames:
+            if from_port.name in accepted_pnames:
+                return True
+            return False
+        return True
+
+    def _validate_reject_connection(self, from_port, to_port):
+        """
+        Check if a pipe connection is NOT allowed if there are a constrains set
+        on the ports.
+
+        Args:
+            from_port (PortItem):
+            to_port (PortItem):
+
+        Returns:
+            bool: true to reject connection.
+        """
+        to_ptype = to_port.port_type
+        from_ptype = from_port.port_type
+
+        to_data = self.reject_connection_types.get(to_port.node.type_) or {}
+        constraints = to_data.get(to_ptype, {}).get(to_port.name, {})
+        reject_data = constraints.get(from_port.node.type_, {})
+
+        rejected_pnames = reject_data.get(from_ptype)
+        if rejected_pnames:
+            if from_port.name in rejected_pnames:
+                return True
+            return False
+
+        from_data = self.reject_connection_types.get(from_port.node.type_) or {}
+        constraints = from_data.get(from_ptype, {}).get(from_port.name, {})
+        reject_data = constraints.get(to_port.node.type_, {})
+
+        rejected_pnames = reject_data.get(to_ptype)
+        if rejected_pnames:
+            if to_port.name in rejected_pnames:
+                return True
+            return False
+        return False
+
     def apply_live_connection(self, event):
         """
         triggered mouse press/release event for the scene.
@@ -807,6 +1010,20 @@ class NodeViewer(QtWidgets.QGraphicsView):
             if self._start_port is end_port:
                 return
 
+        # if connection to itself
+        same_node_connection = end_port.node == self._start_port.node
+        if not self.acyclic:
+            # allow a node cycle connection.
+            same_node_connection = False
+
+        # constrain check
+        accept_connection = self._validate_accept_connection(
+            self._start_port, end_port
+        )
+        reject_connection = self._validate_reject_connection(
+            self._start_port, end_port
+        )
+
         # restore connection check.
         restore_connection = any([
             # if the end port is locked.
@@ -814,11 +1031,15 @@ class NodeViewer(QtWidgets.QGraphicsView):
             # if same port type.
             end_port.port_type == self._start_port.port_type,
             # if connection to itself.
-            end_port.node == self._start_port.node,
+            same_node_connection,
             # if end port is the start port.
             end_port == self._start_port,
             # if detached port is the end port.
-            self._detached_port == end_port
+            self._detached_port == end_port,
+            # if a port has a accept port type constrain.
+            not accept_connection,
+            # if a port has a reject port type constrain.
+            reject_connection
         ])
         if restore_connection:
             if self._detached_port:
@@ -874,6 +1095,10 @@ class NodeViewer(QtWidgets.QGraphicsView):
         elif self._start_port == PortTypeEnum.OUT.value:
             self._LIVE_PIPE.output_port = self._start_port
         self._LIVE_PIPE.setVisible(True)
+        self._LIVE_PIPE.draw_index_pointer(
+            selected_port,
+            self.mapToScene(self._origin_pos)
+        )
 
     def end_live_connection(self):
         """

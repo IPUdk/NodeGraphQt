@@ -252,7 +252,7 @@ class BaseNode(NodeObject):
             tab=tab
         )
         widget = NodeLineEdit(self.view, name, label, text)
-        widget.value_changed.connect(lambda k, v: self.set_property(k, v))
+        widget.value_changed.connect(self.set_property)
         self.view.add_widget(widget)
         #: redraw node to address calls outside the "__init__" func.
         self.view.draw_node()

@@ -421,6 +421,8 @@ class NodeObject(object):
         # redraw the node for custom properties.
         if self.model.is_custom_property(name):
             self.view.draw_node()
+        
+        self.update()
 
     def has_property(self, name):
         """

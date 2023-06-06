@@ -38,11 +38,11 @@ class NodeViewer(QtWidgets.QGraphicsView):
     # node viewer signals.
     # (some of these signals are called by port & node items and connected
     # to the node graph slot functions)
-    moved_nodes = QtCore.Signal(dict)
+    moved_nodes = QtCore.Signal(object)
     search_triggered = QtCore.Signal(str, tuple)
     connection_sliced = QtCore.Signal(list)
     connection_changed = QtCore.Signal(list, list)
-    insert_node = QtCore.Signal(object, str, dict)
+    insert_node = QtCore.Signal(object, str, object)
     node_name_changed = QtCore.Signal(str, str)
     node_backdrop_updated = QtCore.Signal(str, str, object)
 
@@ -101,7 +101,7 @@ class NodeViewer(QtWidgets.QGraphicsView):
         )))
         text_color.setAlpha(50)
         self._cursor_text = QtWidgets.QGraphicsTextItem()
-        self._cursor_text.setFlag(self._cursor_text.ItemIsSelectable, False)
+        self._cursor_text.setFlag(self._cursor_text.GraphicsItemFlag.ItemIsSelectable, False)
         self._cursor_text.setDefaultTextColor(text_color)
         self._cursor_text.setZValue(Z_VAL_PIPE - 1)
         font = self._cursor_text.font()

@@ -140,7 +140,7 @@ class NodeGraph(QtCore.QObject):
             kwargs.get('node_factory') or NodeFactory())
         self._undo_view = None
         self._undo_stack = (
-            kwargs.get('undo_stack') or QtWidgets.QUndoStack(self)
+            kwargs.get('undo_stack') or QtGui.QUndoStack(self)
         )
         self._widget = None
         self._sub_graphs = {}

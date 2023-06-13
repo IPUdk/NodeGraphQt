@@ -2402,6 +2402,8 @@ class SubGraph(NodeGraph):
     -
     """
 
+    sub_group_expanded = QtCore.Signal(NodeGraph)
+
     def __init__(self, parent=None, node=None, node_factory=None, **kwargs):
         """
         Args:
@@ -2861,6 +2863,8 @@ class SubGraph(NodeGraph):
         self.sub_graphs[node.id] = sub_graph
         self.initialized_graphs.append(sub_graph)
 
+
+        self.sub_group_expanded.emit(sub_graph)
         return sub_graph
 
     def collapse_group_node(self, node):

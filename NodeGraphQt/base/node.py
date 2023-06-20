@@ -419,7 +419,7 @@ class NodeObject(object):
             self.model.set_property(name, value)
 
         # redraw the node for custom properties.
-        if self.model.is_custom_property(name):
+        if self.model.is_custom_property(name) and self.model.name != "BackdropNode":
             self.view.draw_node()
         
         self.update()

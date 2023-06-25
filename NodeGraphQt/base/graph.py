@@ -749,19 +749,24 @@ class NodeGraph(QtCore.QObject):
                     menu object.
                 data (dict): serialized menu command data.
             """
-            full_path = os.path.abspath(data['file'])
-            base_dir, file_name = os.path.split(full_path)
-            base_name = os.path.basename(base_dir)
-            file_name, _ = file_name.split('.')
+            file_path = data.get('file', None)
+            if file_path:
+                full_path = os.path.abspath(file_path)
+                base_dir, file_name = os.path.split(full_path)
+                base_name = os.path.basename(base_dir)
+                file_name, _ = file_name.split('.')
 
-            mod_name = '{}.{}'.format(base_name, file_name)
+                mod_name = '{}.{}'.format(base_name, file_name)
 
-            spec = importlib.util.spec_from_file_location(mod_name, full_path)
-            mod = importlib.util.module_from_spec(spec)
-            sys.modules[mod_name] = mod
-            spec.loader.exec_module(mod)
+                spec = importlib.util.spec_from_file_location(mod_name, full_path)
+                mod = importlib.util.module_from_spec(spec)
+                sys.modules[mod_name] = mod
+                spec.loader.exec_module(mod)
 
-            cmd_func = getattr(mod, data['function_name'])
+                cmd_func = getattr(mod, data['function_name'])
+            else:
+                cmd_func = data['function']
+                
             cmd_name = data.get('label') or '<command>'
             cmd_shortcut = data.get('shortcut')
             cmd_kwargs = {'func': cmd_func, 'shortcut': cmd_shortcut}
@@ -851,6 +856,12 @@ class NodeGraph(QtCore.QObject):
             data = json.load(f)
         context_menu = self.get_context_menu(menu)
         self._deserialize_context_menu(context_menu, data)
+    
+    def set_context_menu_from_list(self, menu_list, menu=None):
+        menu = menu or 'graph'
+
+        context_menu = self.get_context_menu(menu)
+        self._deserialize_context_menu(context_menu, menu_list)
 
     def disable_context_menu(self, disabled=True, name='all'):
         """

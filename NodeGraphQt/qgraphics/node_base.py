@@ -342,7 +342,8 @@ class NodeItem(AbstractNodeItem):
         text_h = self._text_item.boundingRect().height()
 
         # width, height from node ports.
-        port_width = 0.0
+        in_port_width = 0.0
+        out_port_width = 0.0
         p_input_text_width = 0.0
         p_output_text_width = 0.0
         p_input_height = 0.0
@@ -350,8 +351,8 @@ class NodeItem(AbstractNodeItem):
         for port, text in self._input_items.items():
             if not port.isVisible():
                 continue
-            if not port_width:
-                port_width = port.boundingRect().width()
+            if not in_port_width:
+                in_port_width = port.boundingRect().width()
             t_width = text.boundingRect().width()
             if text.isVisible() and t_width > p_input_text_width:
                 p_input_text_width = text.boundingRect().width()
@@ -359,8 +360,8 @@ class NodeItem(AbstractNodeItem):
         for port, text in self._output_items.items():
             if not port.isVisible():
                 continue
-            if not port_width:
-                port_width = port.boundingRect().width()
+            if not out_port_width:
+                out_port_width = port.boundingRect().width()
             t_width = text.boundingRect().width()
             if text.isVisible() and t_width > p_output_text_width:
                 p_output_text_width = text.boundingRect().width()
@@ -385,11 +386,11 @@ class NodeItem(AbstractNodeItem):
         elif widget_width:
             side_padding = 10
 
-        width = port_width + max([text_w, port_text_width]) + side_padding
+        width = in_port_width + out_port_width + max([text_w, port_text_width]) + side_padding
         height = max([text_h, p_input_height, p_output_height, widget_height])
         if widget_width:
             # add additional width for node widget.
-            width += widget_width
+            width += max([widget_width - max([text_w, port_text_width]), 0])
         if widget_height:
             # add bottom margin for node widget.
             height += 4.0

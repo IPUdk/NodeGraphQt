@@ -228,17 +228,23 @@ class PipeItem(QtWidgets.QGraphicsPathItem):
             path.cubicTo(ctr_point1, ctr_point2, pos2)
             self.setPath(path)
         elif self.viewer_pipe_layout() == PipeLayoutEnum.ANGLE.value:
-            ctr_offset_y1, ctr_offset_y2 = pos1.y(), pos2.y()
-            distance = abs(ctr_offset_y1 - ctr_offset_y2)/2
-            if start_port.port_type == PortTypeEnum.IN.value:
-                ctr_offset_y1 -= distance
-                ctr_offset_y2 += distance
+            ctr_offset_x = [pos1.x(), pos2.x()]
+            ctr_offset_y = [pos1.y(), pos2.y()]
+            if ctr_offset_y[0] - ctr_offset_y[1] > 0:
+                offset = ctr_offset_y
             else:
-                ctr_offset_y1 += distance
-                ctr_offset_y2 -= distance
+                offset = ctr_offset_x
+                
+            distance = abs(offset[0] - offset[1]) / 2
+            if offset[0] - offset[1] > 0:
+                offset[0] -= distance
+                offset[1] += distance
+            else:
+                offset[0] += distance
+                offset[1] -= distance
 
-            ctr_point1 = QtCore.QPointF(pos1.x(), ctr_offset_y1)
-            ctr_point2 = QtCore.QPointF(pos2.x(), ctr_offset_y2)
+            ctr_point1 = QtCore.QPointF(ctr_offset_x[0], ctr_offset_y[0])
+            ctr_point2 = QtCore.QPointF(ctr_offset_x[1], ctr_offset_y[1])
             path.lineTo(ctr_point1)
             path.lineTo(ctr_point2)
             path.lineTo(pos2)
@@ -272,17 +278,23 @@ class PipeItem(QtWidgets.QGraphicsPathItem):
             path.cubicTo(ctr_point1, ctr_point2, pos2)
             self.setPath(path)
         elif self.viewer_pipe_layout() == PipeLayoutEnum.ANGLE.value:
-            ctr_offset_x1, ctr_offset_x2 = pos1.x(), pos2.x()
-            distance = abs(ctr_offset_x1 - ctr_offset_x2) / 2
-            if start_port.port_type == PortTypeEnum.IN.value:
-                ctr_offset_x1 -= distance
-                ctr_offset_x2 += distance
+            ctr_offset_x = [pos1.x(), pos2.x()]
+            ctr_offset_y = [pos1.y(), pos2.y()]
+            if ctr_offset_x[0] - ctr_offset_x[1] > 0:
+                offset = ctr_offset_x
             else:
-                ctr_offset_x1 += distance
-                ctr_offset_x2 -= distance
+                offset = ctr_offset_y
+                
+            distance = abs(offset[0] - offset[1]) / 2
+            if offset[0] - offset[1] > 0:
+                offset[0] -= distance
+                offset[1] += distance
+            else:
+                offset[0] += distance
+                offset[1] -= distance
 
-            ctr_point1 = QtCore.QPointF(ctr_offset_x1, pos1.y())
-            ctr_point2 = QtCore.QPointF(ctr_offset_x2, pos2.y())
+            ctr_point1 = QtCore.QPointF(ctr_offset_x[0], ctr_offset_y[0])
+            ctr_point2 = QtCore.QPointF(ctr_offset_x[1], ctr_offset_y[1])
             path.lineTo(ctr_point1)
             path.lineTo(ctr_point2)
             path.lineTo(pos2)

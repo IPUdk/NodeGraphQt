@@ -129,24 +129,42 @@ class PipeItem(QtWidgets.QGraphicsPathItem):
                 self._dir_pointer.setBrush(color.darker(200))
 
         self._dir_pointer.setVisible(True)
-        loc_pt = self.path().pointAtPercent(0.49)
-        tgt_pt = self.path().pointAtPercent(0.51)
+        if self.viewer_pipe_layout() == PipeLayoutEnum.CURVED.value:
+            loc_pt = self.path().pointAtPercent(0.49)
+            tgt_pt = self.path().pointAtPercent(0.51)
+        else:
+            loc_pt = self.path().pointAtPercent(0.98)
+            tgt_pt = self.path().pointAtPercent(1.00)
+
         radians = math.atan2(tgt_pt.y() - loc_pt.y(),
                              tgt_pt.x() - loc_pt.x())
         degrees = math.degrees(radians) - 90
         self._dir_pointer.setRotation(degrees)
-        self._dir_pointer.setPos(self.path().pointAtPercent(0.5))
 
-        cen_x = self.path().pointAtPercent(0.5).x()
-        cen_y = self.path().pointAtPercent(0.5).y()
-        dist = math.hypot(tgt_pt.x() - cen_x, tgt_pt.y() - cen_y)
+        if self.viewer_pipe_layout() == PipeLayoutEnum.CURVED.value:
+            cen_x = self.path().pointAtPercent(0.5).x()
+            cen_y = self.path().pointAtPercent(0.5).y()
+            dist = math.hypot(tgt_pt.x() - cen_x, tgt_pt.y() - cen_y)
+            self._dir_pointer.setPos(self.path().pointAtPercent(0.5))
 
-        self._dir_pointer.setVisible(True)
-        if dist < 0.3:
-            self._dir_pointer.setVisible(False)
-            return
-        if dist < 1.0:
-            self._dir_pointer.setScale(dist)
+            self._dir_pointer.setVisible(True)
+            if dist < 0.5:
+                self._dir_pointer.setVisible(False)
+                return
+            if dist < 1.0:
+                self._dir_pointer.setScale(dist)
+        else:
+            cen_x = self.path().pointAtPercent(0).x()
+            cen_y = self.path().pointAtPercent(0).y()
+            dist = math.hypot(tgt_pt.x() - cen_x, tgt_pt.y() - cen_y)
+            self._dir_pointer.setPos(self.path().pointAtPercent(13/dist))
+
+            self._dir_pointer.setVisible(True)
+            if dist/200 < 0.5:
+                self._dir_pointer.setVisible(False)
+                return
+            if dist/200 < 1.0:
+                self._dir_pointer.setScale(dist/200)
 
     def _draw_path_cycled_vertical(self, start_port, pos1, pos2, path):
         """

@@ -121,7 +121,7 @@ class NodeModel(object):
             self.__class__.__name__, self.name, self.id)
 
     def add_property(self, name, value, items=None, range=None,
-                     widget_type=None, tab=None):
+                     widget_type=None, tab=None, **kwargs):
         """
         add custom property or raises an error if the property name is already
         taken.
@@ -153,6 +153,9 @@ class NodeModel(object):
                 self._TEMP_property_attrs[name]['items'] = items
             if range:
                 self._TEMP_property_attrs[name]['range'] = range
+            # Added support for storing more information in the properties
+            for key, val in kwargs.items():
+                self._TEMP_property_attrs[name][key] = val
         else:
             attrs = {
                 self.type_: {
@@ -231,7 +234,23 @@ class NodeModel(object):
                 return attrs[name].get('tab')
             return
         return model.get_node_common_properties(self.type_)[name]['tab']
+    
+    def get_prop_level(self, name):
+        """
+        Args:
+            name (str): property name.
 
+        Returns:
+            str: name of the tab for the properties bin.
+        """
+        model = self._graph_model
+        if model is None:
+            attrs = self._TEMP_property_attrs.get(name)
+            if attrs:
+                return attrs[name].get('level', 0)
+            return
+        return model.get_node_common_properties(self.type_)[name].get('level', 0)
+    
     def add_port_accept_connection_type(
             self,
             port_name, port_type, node_type,

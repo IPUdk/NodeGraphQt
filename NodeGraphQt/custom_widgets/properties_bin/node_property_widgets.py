@@ -224,7 +224,8 @@ class NodePropWidget(QtWidgets.QWidget):
         tab_mapping = defaultdict(list)
         for prop_name, prop_val in model.custom_properties.items():
             tab_name = model.get_tab_name(prop_name)
-            tab_mapping[tab_name].append((prop_name, prop_val))
+            prop_levels = model.get_prop_level(prop_name)
+            tab_mapping[tab_name].append((prop_name, prop_val, prop_levels))
 
         # add tabs.
         for tab in sorted(tab_mapping.keys()):
@@ -234,12 +235,18 @@ class NodePropWidget(QtWidgets.QWidget):
         # property widget factory.
         widget_factory = NodePropertyWidgetFactory()
 
+        # get current node level
+        current_level = float(model.custom_properties.get('Level of detail', 'inf'))
+
         # populate tab properties.
         for tab in sorted(tab_mapping.keys()):
             prop_window = self.__tab_windows[tab]
-            for prop_name, value in tab_mapping[tab]:
+            for prop_name, value, levels in tab_mapping[tab]:
+                # Hide properties
                 wid_type = model.get_widget_type(prop_name)
                 if wid_type is None or wid_type == 0:
+                    continue
+                if current_level not in levels:
                     continue
                 
                 # Adding bypass to pass widgets directly from the property creation

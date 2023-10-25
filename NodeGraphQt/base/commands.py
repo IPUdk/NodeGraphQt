@@ -17,6 +17,7 @@ class PropertyChangedCmd(QtWidgets.QUndoCommand):
     def __init__(self, node, name, value):
         QtWidgets.QUndoCommand.__init__(self)
         self.setText('property "{}:{}"'.format(node.name(), name))
+        self.widget = node._graph
         self.node = node
         self.name = name
         self.old_val = node.get_property(name)
@@ -72,6 +73,7 @@ class NodeVisibleCmd(QtWidgets.QUndoCommand):
     def __init__(self, node, visible):
         QtWidgets.QUndoCommand.__init__(self)
         self.node = node
+        self.widget = node._graph
         self.visible = visible
         self.selected = self.node.selected()
 
@@ -116,6 +118,7 @@ class NodeMovedCmd(QtWidgets.QUndoCommand):
     def __init__(self, node, pos, prev_pos):
         QtWidgets.QUndoCommand.__init__(self)
         self.node = node
+        self.widget = node._graph
         self.pos = pos
         self.prev_pos = prev_pos
 
@@ -143,6 +146,7 @@ class NodeAddedCmd(QtWidgets.QUndoCommand):
     def __init__(self, graph, node, pos=None):
         QtWidgets.QUndoCommand.__init__(self)
         self.setText('added node')
+        self.widget = graph
         self.viewer = graph.viewer()
         self.model = graph.model
         self.node = node
@@ -175,6 +179,7 @@ class NodeRemovedCmd(QtWidgets.QUndoCommand):
     def __init__(self, graph, node):
         QtWidgets.QUndoCommand.__init__(self)
         self.setText('deleted node')
+        self.widget = graph
         self.scene = graph.scene()
         self.model = graph.model
         self.node = node
@@ -206,6 +211,8 @@ class NodeInputConnectedCmd(QtWidgets.QUndoCommand):
             self.source = trg_port
             self.target = src_port
 
+        self.widget = src_port.node()._graph
+
     def undo(self):
         node = self.source.node()
         node.on_input_disconnected(self.source, self.target)
@@ -233,6 +240,8 @@ class NodeInputDisconnectedCmd(QtWidgets.QUndoCommand):
             self.source = trg_port
             self.target = src_port
 
+        self.widget = src_port.node()._graph
+
     def undo(self):
         node = self.source.node()
         node.on_input_connected(self.source, self.target)
@@ -255,6 +264,7 @@ class PortConnectedCmd(QtWidgets.QUndoCommand):
         QtWidgets.QUndoCommand.__init__(self)
         self.source = src_port
         self.target = trg_port
+        self.widget = src_port.node()._graph
 
     def undo(self):
         src_model = self.source.model
@@ -301,6 +311,7 @@ class PortDisconnectedCmd(QtWidgets.QUndoCommand):
         QtWidgets.QUndoCommand.__init__(self)
         self.source = src_port
         self.target = trg_port
+        self.widget = src_port.node()._graph
 
     def undo(self):
         src_model = self.source.model
@@ -346,6 +357,8 @@ class PortLockedCmd(QtWidgets.QUndoCommand):
         QtWidgets.QUndoCommand.__init__(self)
         self.setText('lock port "{}"'.format(port.name()))
         self.port = port
+        self.widget = port.node()._graph
+
 
     def undo(self):
         self.port.model.locked = False
@@ -368,6 +381,7 @@ class PortUnlockedCmd(QtWidgets.QUndoCommand):
         QtWidgets.QUndoCommand.__init__(self)
         self.setText('unlock port "{}"'.format(port.name()))
         self.port = port
+        self.widget = port.node()._graph
 
     def undo(self):
         self.port.model.locked = True
@@ -394,6 +408,8 @@ class PortVisibleCmd(QtWidgets.QUndoCommand):
             self.setText('show port {}'.format(self.port.name()))
         else:
             self.setText('hide port {}'.format(self.port.name()))
+
+        self.widget = port.node()._graph
 
     def set_visible(self, visible):
         self.port.model.visible = visible

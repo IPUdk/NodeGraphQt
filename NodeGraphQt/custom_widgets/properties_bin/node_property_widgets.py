@@ -236,7 +236,7 @@ class NodePropWidget(QtWidgets.QWidget):
         widget_factory = NodePropertyWidgetFactory()
 
         # get current node level
-        current_level = model.custom_properties.get('Level of detail')
+        current_level = model.custom_properties.get('Level of detail', -1)
 
         # populate tab properties.
         for tab in sorted(tab_mapping.keys()):
@@ -246,7 +246,7 @@ class NodePropWidget(QtWidgets.QWidget):
                 wid_type = model.get_widget_type(prop_name)
                 if wid_type is None or wid_type == 0:
                     continue
-                if current_level and node.Level(level) != node.Level.AllLevels and node.Level(current_level) != node.Level(level):
+                if current_level >= 0 and node.Level(level) != node.Level.AllLevels and node.Level(current_level) != node.Level(level):
                     continue
                 
                 # Adding bypass to pass widgets directly from the property creation

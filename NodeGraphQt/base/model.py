@@ -235,6 +235,26 @@ class NodeModel(object):
             return
         return model.get_node_common_properties(self.type_)[name]['tab']
     
+    def get_display_name(self, name):
+        """
+        Args:
+            name (str): property name.
+
+        Returns:
+            str: name of the tab for the properties bin.
+        """
+        model = self._graph_model
+        if model is None:
+            attrs = self._TEMP_property_attrs.get(name)
+            if attrs:
+                return attrs[name].get('tab')
+            return
+        
+        display_name = model.get_node_common_properties(self.type_)[name]['display_name']
+        if display_name:
+            return display_name
+        return name
+    
     def get_prop_level(self, name):
         """
         Args:

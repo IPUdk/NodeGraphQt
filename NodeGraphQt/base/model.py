@@ -255,6 +255,26 @@ class NodeModel(object):
             return display_name
         return name
     
+    def get_hide_check(self, name):
+        """
+        Args:
+            name (str): property name.
+
+        Returns:
+            str: name of the tab for the properties bin.
+        """
+        model = self._graph_model
+        if model is None:
+            attrs = self._TEMP_property_attrs.get(name)
+            if attrs:
+                return attrs[name].get('tab')
+            return
+        
+        hide_check = model.get_node_common_properties(self.type_)[name]['hide_check']
+        if hide_check:
+            return hide_check
+        return False    
+    
     def get_prop_level(self, name):
         """
         Args:

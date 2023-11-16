@@ -7,6 +7,8 @@ from .node_property_factory import NodePropertyWidgetFactory
 from .prop_widgets_base import PropLineEdit
 from NodeGraphQt.constants import NodePropWidgetEnum
 
+from eemap.ui.widgets.properties_widgets import NumPropertyEdit
+
 
 class _PropertiesDelegate(QtWidgets.QStyledItemDelegate):
 
@@ -225,8 +227,9 @@ class NodePropWidget(QtWidgets.QWidget):
         for prop_name, prop_val in model.custom_properties.items():
             tab_name = model.get_tab_name(prop_name)
             display_name = model.get_display_name(prop_name)
+            hide_check = model.get_hide_check(prop_name)
             prop_levels = model.get_prop_level(prop_name)
-            tab_mapping[tab_name].append((prop_name, prop_val, display_name, prop_levels))
+            tab_mapping[tab_name].append((prop_name, prop_val, display_name, hide_check, prop_levels))
 
         # add tabs.
         for tab in sorted(tab_mapping.keys()):
@@ -242,7 +245,7 @@ class NodePropWidget(QtWidgets.QWidget):
         # populate tab properties.
         for tab in sorted(tab_mapping.keys()):
             prop_window = self.__tab_windows[tab]
-            for prop_name, value, display_name, level in tab_mapping[tab]:
+            for prop_name, value, display_name, hide_check, level in tab_mapping[tab]:
                 # Hide properties
                 wid_type = model.get_widget_type(prop_name)
                 if wid_type is None or wid_type == 0:
@@ -253,6 +256,8 @@ class NodePropWidget(QtWidgets.QWidget):
                 # Adding bypass to pass widgets directly from the property creation
                 if isinstance(wid_type, NodePropWidgetEnum) or isinstance(wid_type, int):
                     widget = widget_factory.get_widget(wid_type)
+                elif wid_type == NumPropertyEdit: # TODO wonder if above isinstance work at all, here we need to == on class type check
+                    widget = wid_type(hide_check=hide_check)
                 else:
                     widget = wid_type() # Create widget if it is not an integer
 

@@ -242,7 +242,9 @@ class NodePropWidget(QtWidgets.QWidget):
         # get current node level
         current_level = int(model.custom_properties.get('Level of detail', -1))
 
-        
+        # remove buttons from a property group 
+        if getattr(node,"buttonGroup",False):
+            [node.buttonGroup.removeButton(button) for button in node.buttonGroup.buttons()]
 
         # populate tab properties.
         for tab in sorted(tab_mapping.keys()):
@@ -262,8 +264,10 @@ class NodePropWidget(QtWidgets.QWidget):
                 elif wid_type == NumPropertyEdit: # TODO wonder if above isinstance work at all, here we need to == on class type check
                     widget = wid_type(useGroupRadioButton=useGroupRadioButton)
                     if useGroupRadioButton:
-                        model.buttonGroup.addButton(widget.check_box)
-                        #value[0] = 0 # start unchecked
+                        node.buttonGroup.addButton(widget.check_box)
+                        #if not widget.check_box in node.buttonGroup.buttons():
+                        #    node.buttonGroup.addButton(widget.check_box)
+                            #value[0] = 0 # start unchecked
                     else:
                         value[0] = 1 # start checked
 

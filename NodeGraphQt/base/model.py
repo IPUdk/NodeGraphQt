@@ -255,7 +255,7 @@ class NodeModel(object):
             return display_name
         return name
     
-    def get_hide_check(self, name):
+    def get_useGroupRadioButton(self, name):
         """
         Args:
             name (str): property name.
@@ -270,9 +270,9 @@ class NodeModel(object):
                 return attrs[name].get('tab')
             return
         
-        hide_check = model.get_node_common_properties(self.type_)[name]['hide_check']
-        if hide_check:
-            return hide_check
+        useGroupRadioButton = model.get_node_common_properties(self.type_)[name]['useGroupRadioButton']
+        if useGroupRadioButton:
+            return useGroupRadioButton
         return False    
     
     def get_prop_level(self, name):

@@ -227,9 +227,9 @@ class NodePropWidget(QtWidgets.QWidget):
         for prop_name, prop_val in model.custom_properties.items():
             tab_name = model.get_tab_name(prop_name)
             display_name = model.get_display_name(prop_name)
-            hide_check = model.get_hide_check(prop_name)
+            useGroupRadioButton = model.get_useGroupRadioButton(prop_name)
             prop_levels = model.get_prop_level(prop_name)
-            tab_mapping[tab_name].append((prop_name, prop_val, display_name, hide_check, prop_levels))
+            tab_mapping[tab_name].append((prop_name, prop_val, display_name, useGroupRadioButton, prop_levels))
 
         # add tabs.
         for tab in sorted(tab_mapping.keys()):
@@ -242,10 +242,13 @@ class NodePropWidget(QtWidgets.QWidget):
         # get current node level
         current_level = int(model.custom_properties.get('Level of detail', -1))
 
+        
+
         # populate tab properties.
         for tab in sorted(tab_mapping.keys()):
             prop_window = self.__tab_windows[tab]
-            for prop_name, value, display_name, hide_check, level in tab_mapping[tab]:
+            
+            for prop_name, value, display_name, useGroupRadioButton, level in tab_mapping[tab]:
                 # Hide properties
                 wid_type = model.get_widget_type(prop_name)
                 if wid_type is None or wid_type == 0:
@@ -257,9 +260,17 @@ class NodePropWidget(QtWidgets.QWidget):
                 if isinstance(wid_type, NodePropWidgetEnum) or isinstance(wid_type, int):
                     widget = widget_factory.get_widget(wid_type)
                 elif wid_type == NumPropertyEdit: # TODO wonder if above isinstance work at all, here we need to == on class type check
-                    widget = wid_type(hide_check=hide_check)
+                    widget = wid_type(useGroupRadioButton=useGroupRadioButton)
+                    if useGroupRadioButton:
+                        model.buttonGroup.addButton(widget.check_box)
+                        #value[0] = 0 # start unchecked
+                    else:
+                        value[0] = 1 # start checked
+
                 else:
                     widget = wid_type() # Create widget if it is not an integer
+                    
+
 
                 if prop_name in common_props.keys():
                     if 'items' in common_props[prop_name].keys():
@@ -273,6 +284,7 @@ class NodePropWidget(QtWidgets.QWidget):
                     display_name = prop_name.replace('_', ' ')                   
                 prop_window.add_widget(prop_name, widget, value,display_name)
                 widget.value_changed.connect(self._on_property_changed)
+
 
         # add "Node" tab properties.
         self.add_tab('Node')

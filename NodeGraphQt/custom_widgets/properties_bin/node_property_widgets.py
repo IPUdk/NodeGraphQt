@@ -265,16 +265,10 @@ class NodePropWidget(QtWidgets.QWidget):
                     widget = wid_type(useGroupRadioButton=useGroupRadioButton)
                     if useGroupRadioButton:
                         node.buttonGroup.addButton(widget.check_box)
-                        #if not widget.check_box in node.buttonGroup.buttons():
-                        #    node.buttonGroup.addButton(widget.check_box)
-                            #value[0] = 0 # start unchecked
                     else:
                         value[0] = 1 # start checked
-
                 else:
                     widget = wid_type() # Create widget if it is not an integer
-                    
-
 
                 if prop_name in common_props.keys():
                     if 'items' in common_props[prop_name].keys():

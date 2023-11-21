@@ -129,7 +129,7 @@ class _PropertiesContainer(QtWidgets.QWidget):
                 self.button_group.addButton(check)
         else:
             self.__layout.addWidget(QtWidgets.QLabel(label), row, 0, 1, 2, label_flags)
-            self.button_group = QtWidgets.QButtonGroup(self)
+            #self.button_group = QtWidgets.QButtonGroup(self)
 
 
         self.__layout.addWidget(widget, row, 2)

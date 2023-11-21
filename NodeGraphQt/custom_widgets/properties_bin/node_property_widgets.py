@@ -7,7 +7,7 @@ from .node_property_factory import NodePropertyWidgetFactory
 from .prop_widgets_base import PropLineEdit
 from NodeGraphQt.constants import NodePropWidgetEnum
 
-from eemap.ui.widgets.properties_widgets import NumPropertyEditWithCheck, NumPropertyEditWithCheckAndState
+# from eemap.ui.widgets.properties_widgets import NumPropertyEditWithCheck, NumPropertyEditWithCheckAndState
 
 
 class _PropertiesDelegate(QtWidgets.QStyledItemDelegate):
@@ -90,6 +90,9 @@ class _PropertiesContainer(QtWidgets.QWidget):
         layout.setAlignment(QtCore.Qt.AlignTop)
         layout.addLayout(self.__layout)
 
+        # Manage buttons
+        self.button_group = QtWidgets.QButtonGroup(self)
+
     def __repr__(self):
         return '<{} object at {}>'.format(
             self.__class__.__name__, hex(id(self))
@@ -113,12 +116,28 @@ class _PropertiesContainer(QtWidgets.QWidget):
         if row > 0:
             row += 1
 
-        label_flags = QtCore.Qt.AlignmentFlag.AlignCenter | QtCore.Qt.AlignmentFlag.AlignRight
+        label_flags = QtCore.Qt.AlignmentFlag.AlignCenter | QtCore.Qt.AlignmentFlag.AlignLeft
         if widget.__class__.__name__ == 'PropTextEdit':
             label_flags = label_flags | QtCore.Qt.AlignmentFlag.AlignTop
 
-        self.__layout.addWidget(QtWidgets.QLabel(label), row, 0, label_flags)
-        self.__layout.addWidget(widget, row, 1)
+        has_check = getattr(widget, 'HAS_CHECK', False)
+        if has_check:
+            check = widget.get_check()
+            self.__layout.addWidget(check, row, 0)
+            self.__layout.addWidget(QtWidgets.QLabel(label), row, 1, label_flags)
+            if isinstance(check, QtWidgets.QRadioButton):
+                self.button_group.addButton(check)
+        else:
+            self.__layout.addWidget(QtWidgets.QLabel(label), row, 0, 1, 2, label_flags)
+            #self.button_group = QtWidgets.QButtonGroup(self)
+
+
+        self.__layout.addWidget(widget, row, 2)
+
+        # Adjust column stretch factors
+        self.__layout.setColumnStretch(0, 0)  # First column with minimal stretch
+        self.__layout.setColumnStretch(1, 0)  # Second column with minimal stretch
+        self.__layout.setColumnStretch(2, 1)  # Third column with maximum stret
 
     def get_widget(self, name):
         """
@@ -241,9 +260,9 @@ class NodePropWidget(QtWidgets.QWidget):
         # get current node level
         current_level = int(model.custom_properties.get('Level of detail', -1))
 
-        # remove buttons from a property group 
-        if getattr(node,"buttonGroup",False):
-            [node.buttonGroup.removeButton(button) for button in node.buttonGroup.buttons()]
+        # # remove buttons from a property group 
+        # if getattr(node,"buttonGroup",False):
+        #     [node.buttonGroup.removeButton(button) for button in node.buttonGroup.buttons()]
 
         # populate tab properties.
         for tab in sorted(tab_mapping.keys()):
@@ -263,9 +282,9 @@ class NodePropWidget(QtWidgets.QWidget):
                 else:
                     widget = wid_type() # Create widget if it is not an integer
 
-                # add to button group
-                if wid_type in [NumPropertyEditWithCheck,NumPropertyEditWithCheckAndState]:
-                    node.buttonGroup.addButton(widget.check_box)
+                # # add to button group
+                # if wid_type in [NumPropertyEditWithCheck,NumPropertyEditWithCheckAndState]:
+                #     node.buttonGroup.addButton(widget.check_box)
 
                 if prop_name in common_props.keys():
                     if 'items' in common_props[prop_name].keys():

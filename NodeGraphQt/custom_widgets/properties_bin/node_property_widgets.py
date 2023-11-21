@@ -7,7 +7,7 @@ from .node_property_factory import NodePropertyWidgetFactory
 from .prop_widgets_base import PropLineEdit
 from NodeGraphQt.constants import NodePropWidgetEnum
 
-from eemap.ui.widgets.properties_widgets import NumPropertyEditWithCheck, NumPropertyEditWithCheckAndState
+# from eemap.ui.widgets.properties_widgets import NumPropertyEditWithCheck, NumPropertyEditWithCheckAndState
 
 
 class _PropertiesDelegate(QtWidgets.QStyledItemDelegate):
@@ -260,9 +260,9 @@ class NodePropWidget(QtWidgets.QWidget):
         # get current node level
         current_level = int(model.custom_properties.get('Level of detail', -1))
 
-        # remove buttons from a property group 
-        if getattr(node,"buttonGroup",False):
-            [node.buttonGroup.removeButton(button) for button in node.buttonGroup.buttons()]
+        # # remove buttons from a property group 
+        # if getattr(node,"buttonGroup",False):
+        #     [node.buttonGroup.removeButton(button) for button in node.buttonGroup.buttons()]
 
         # populate tab properties.
         for tab in sorted(tab_mapping.keys()):
@@ -282,9 +282,9 @@ class NodePropWidget(QtWidgets.QWidget):
                 else:
                     widget = wid_type() # Create widget if it is not an integer
 
-                # add to button group
-                if wid_type in [NumPropertyEditWithCheck,NumPropertyEditWithCheckAndState]:
-                    node.buttonGroup.addButton(widget.check_box)
+                # # add to button group
+                # if wid_type in [NumPropertyEditWithCheck,NumPropertyEditWithCheckAndState]:
+                #     node.buttonGroup.addButton(widget.check_box)
 
                 if prop_name in common_props.keys():
                     if 'items' in common_props[prop_name].keys():

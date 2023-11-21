@@ -116,7 +116,7 @@ class _PropertiesContainer(QtWidgets.QWidget):
         if row > 0:
             row += 1
 
-        label_flags = QtCore.Qt.AlignmentFlag.AlignCenter | QtCore.Qt.AlignmentFlag.AlignRight
+        label_flags = QtCore.Qt.AlignmentFlag.AlignCenter | QtCore.Qt.AlignmentFlag.AlignLeft
         if widget.__class__.__name__ == 'PropTextEdit':
             label_flags = label_flags | QtCore.Qt.AlignmentFlag.AlignTop
 

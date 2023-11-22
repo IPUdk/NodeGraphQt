@@ -1740,7 +1740,9 @@ class NodeGraph(QtCore.QObject):
         for n_id, n_data in data.get('nodes', {}).items():
             identifier = n_data['type_']
             node = self._node_factory.create_node_instance(identifier)
-            if node:
+            if not node:
+                print("Could not process {}".format(identifier.split(".")[-1]))
+            else:
                 node.NODE_NAME = n_data.get('name', node.NODE_NAME)
                 # set properties.
                 for prop in node.model.properties.keys():

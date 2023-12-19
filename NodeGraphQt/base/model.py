@@ -250,7 +250,7 @@ class NodeModel(object):
                 return attrs[name].get('tab')
             return
         
-        display_name = model.get_node_common_properties(self.type_)[name]['display_name']
+        display_name = model.get_node_common_properties(self.type_)[name].get('display_name')
         if display_name:
             return display_name
         return name

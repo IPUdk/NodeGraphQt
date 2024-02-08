@@ -117,7 +117,7 @@ class _PropertiesContainer(QtWidgets.QWidget):
             row += 1
 
         label_flags = QtCore.Qt.AlignmentFlag.AlignCenter | QtCore.Qt.AlignmentFlag.AlignLeft
-        if widget.__class__.__name__ == 'PropTextEdit':
+        if widget.__class__.__name__ in ['PropTextEdit','PlainTextEdit']:
             label_flags = label_flags | QtCore.Qt.AlignmentFlag.AlignTop
 
         has_check = getattr(widget, 'HAS_CHECK', False)
@@ -250,7 +250,7 @@ class NodePropWidget(QtWidgets.QWidget):
             tab_mapping[tab_name].append((prop_name, prop_val, display_name, prop_levels))
 
         # add tabs.
-        for tab in sorted(tab_mapping.keys()):
+        for tab in tab_mapping.keys(): # sorted(tab_mapping.keys()):
             if tab != 'Node':
                 self.add_tab(tab)
 

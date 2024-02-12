@@ -92,6 +92,7 @@ class _PropertiesContainer(QtWidgets.QWidget):
 
         # Manage buttons
         self.button_group = QtWidgets.QButtonGroup(self)
+        self.button_group_electricity = QtWidgets.QButtonGroup(self)
 
     def __repr__(self):
         return '<{} object at {}>'.format(
@@ -126,7 +127,10 @@ class _PropertiesContainer(QtWidgets.QWidget):
             self.__layout.addWidget(check, row, 0)
             self.__layout.addWidget(QtWidgets.QLabel(label), row, 1, label_flags)
             if isinstance(check, QtWidgets.QRadioButton):
-                self.button_group.addButton(check)
+                if name in ["Electricity", "Electricity_m_KPI", "Electricity_Q_KPI"]:
+                    self.button_group_electricity.addButton(check)
+                else:
+                    self.button_group.addButton(check)
         else:
             self.__layout.addWidget(QtWidgets.QLabel(label), row, 0, 1, 2, label_flags)
             #self.button_group = QtWidgets.QButtonGroup(self)

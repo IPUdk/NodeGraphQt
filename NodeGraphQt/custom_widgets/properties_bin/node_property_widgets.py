@@ -321,7 +321,13 @@ class NodePropWidget(QtWidgets.QWidget):
         # cnt = self.__tab.count() - 1
         cnt = self.__tab.indexOf(prop_window)
         self.__tab.setTabEnabled(cnt, False)
-        # self.__tab.setTabVisible(cnt, False)
+        self.__tab.setTabVisible(cnt, False)
+
+        if self.__tab_windows.get('Properties',False):
+            prop_window = self.__tab_windows['Properties']
+            cnt = self.__tab.indexOf(prop_window)
+            self.__tab.setTabEnabled(cnt, False)
+            self.__tab.setTabVisible(cnt, False)
 
         self.type_wgt.setText(model.get_property('type_'))
 

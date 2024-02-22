@@ -181,7 +181,7 @@ class _NumberValueEdit(QtWidgets.QLineEdit):
     def set_value(self, value):
         if value != self.get_value():
             loc = QtCore.QLocale()
-            val = loc.toString(self._convert_text(value))
+            val = loc.toString(float(value))
             self.setText(val)
 
 

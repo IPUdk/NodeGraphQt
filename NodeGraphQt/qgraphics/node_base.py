@@ -279,7 +279,7 @@ class NodeItem(AbstractNodeItem):
         if state:
             tooltip += ' <font color="red"><b>(DISABLED)</b></font>'
         tooltip += '<br/>{}<br/>'.format(self.type_)
-        self.setToolTip(tooltip)
+        # self.setToolTip(tooltip)
 
     def _set_base_size(self, add_w=0.0, add_h=0.0):
         """

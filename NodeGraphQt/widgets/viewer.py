@@ -23,7 +23,7 @@ from NodeGraphQt.widgets.dialogs import BaseDialog, FileDialog
 from NodeGraphQt.widgets.scene import NodeScene
 from NodeGraphQt.widgets.tab_search import TabSearchMenuWidget
 
-ZOOM_MIN = -0.95
+ZOOM_MIN = -0.5
 ZOOM_MAX = 2.0
 
 
@@ -231,10 +231,10 @@ class NodeViewer(QtWidgets.QGraphicsView):
         scale = (0.9 + sensitivity) if value < 0.0 else (1.1 - sensitivity)
         zoom = self.get_zoom()
         if ZOOM_MIN >= zoom:
-            if scale == 0.9:
+            if scale <= 1:
                 return
         if ZOOM_MAX <= zoom:
-            if scale == 1.1:
+            if scale > 1:
                 return
         self.scale(scale, scale, pos)
 
@@ -657,7 +657,7 @@ class NodeViewer(QtWidgets.QGraphicsView):
             delta = event.angleDelta().y()
             if delta == 0:
                 delta = event.angleDelta().x()
-        self._set_viewer_zoom(delta, pos=event.pos())
+        self._set_viewer_zoom(delta, 0.05, pos=event.pos())
 
     def dropEvent(self, event):
         pos = self.mapToScene(event.pos())

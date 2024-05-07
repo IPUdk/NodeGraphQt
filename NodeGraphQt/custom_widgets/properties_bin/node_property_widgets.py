@@ -208,7 +208,7 @@ class NodePropWidget(QtWidgets.QWidget):
         #layout.setSpacing(4)
         layout.addLayout(name_layout)
         layout.addWidget(self.__tab)
-        layout.addWidget(self.type_wgt)
+        # layout.addWidget(self.type_wgt)
 
         self._read_node(node)
 

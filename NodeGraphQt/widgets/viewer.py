@@ -218,17 +218,16 @@ class NodeViewer(QtWidgets.QGraphicsView):
             sensitivity (float): zoom sensitivity.
             pos (QtCore.QPoint): mapped position.
         """
+        if value == 0.0:
+            return
+
         if pos:
             pos = self.mapToScene(pos)
         if sensitivity is None:
             scale = 1.001 ** value
-            self.scale(scale, scale, pos)
-            return
+        else:
+            scale = (0.9 + sensitivity) if value < 0.0 else (1.1 - sensitivity)
 
-        if value == 0.0:
-            return
-
-        scale = (0.9 + sensitivity) if value < 0.0 else (1.1 - sensitivity)
         zoom = self.get_zoom()
         if ZOOM_MIN >= zoom:
             if scale <= 1:
@@ -657,7 +656,7 @@ class NodeViewer(QtWidgets.QGraphicsView):
             delta = event.angleDelta().y()
             if delta == 0:
                 delta = event.angleDelta().x()
-        self._set_viewer_zoom(delta, 0.05, pos=event.pos())
+        self._set_viewer_zoom(delta, pos=event.pos())
 
     def dropEvent(self, event):
         pos = self.mapToScene(event.pos())

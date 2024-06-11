@@ -46,6 +46,7 @@ class NodeItem(AbstractNodeItem):
         self._widgets = OrderedDict()
         self._proxy_mode = False
         self._proxy_mode_threshold = 70
+        self._editing = False
 
     def post_init(self, viewer, pos=None):
         """
@@ -85,7 +86,7 @@ class NodeItem(AbstractNodeItem):
         painter.drawRoundedRect(rect, radius, radius)
 
         # light overlay on background when selected.
-        if self.selected:
+        if self.selected or self._editing:
             painter.setBrush(QtGui.QColor(*NodeEnum.SELECTED_COLOR.value))
             painter.drawRoundedRect(rect, radius, radius)
 
@@ -96,7 +97,7 @@ class NodeItem(AbstractNodeItem):
                                   rect.y() + padding[1],
                                   rect.width() - padding[0] - margin,
                                   text_rect.height() - (padding[1] * 2))
-        if self.selected:
+        if self.selected or self._editing:
             painter.setBrush(QtGui.QColor(*NodeEnum.SELECTED_COLOR.value))
         else:
             painter.setBrush(QtGui.QColor(0, 0, 0, 80))
@@ -107,6 +108,11 @@ class NodeItem(AbstractNodeItem):
             border_width = 1.2
             border_color = QtGui.QColor(
                 *NodeEnum.SELECTED_BORDER_COLOR.value
+            )
+        elif self._editing:
+            border_width = 1.2
+            border_color = QtGui.QColor(
+                *NodeEnum.EDITING_BORDER_COLOR.value
             )
         else:
             border_width = 0.8
@@ -143,7 +149,7 @@ class NodeItem(AbstractNodeItem):
         painter.drawRoundedRect(rect, radius, radius)
 
         # light overlay on background when selected.
-        if self.selected:
+        if self.selected or self._editing:
             painter.setBrush(
                 QtGui.QColor(*NodeEnum.SELECTED_COLOR.value)
             )
@@ -152,7 +158,7 @@ class NodeItem(AbstractNodeItem):
         # top & bottom edge background.
         padding = 2.0
         height = 10
-        if self.selected:
+        if self.selected or self._editing:
             painter.setBrush(QtGui.QColor(*NodeEnum.SELECTED_COLOR.value))
         else:
             painter.setBrush(QtGui.QColor(0, 0, 0, 80))
@@ -169,6 +175,12 @@ class NodeItem(AbstractNodeItem):
             border_color = QtGui.QColor(
                 *NodeEnum.SELECTED_BORDER_COLOR.value
             )
+        elif self._editing:
+            border_width = 1.2
+            border_color = QtGui.QColor(
+                *NodeEnum.EDITING_BORDER_COLOR.value
+            )
+
         border_rect = QtCore.QRectF(rect.left(), rect.top(),
                                     rect.width(), rect.height())
 

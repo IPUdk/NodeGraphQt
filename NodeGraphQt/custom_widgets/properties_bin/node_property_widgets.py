@@ -424,6 +424,7 @@ class PropertiesBinWidget(QtWidgets.QWidget):
 
     #: Signal emitted (node_id, prop_name, prop_value)
     property_changed = QtCore.Signal(str, str, object)
+    prop_closed = QtCore.Signal(str)
 
     def __init__(self, parent=None, node_graph=None):
         super(PropertiesBinWidget, self).__init__(parent)
@@ -472,6 +473,7 @@ class PropertiesBinWidget(QtWidgets.QWidget):
     def __on_prop_close(self, node_id):
         items = self._prop_list.findItems(node_id, QtCore.Qt.MatchFlag.MatchExactly)
         [self._prop_list.removeRow(i.row()) for i in items]
+        self.prop_closed.emit(node_id)
 
     def __on_limit_changed(self, value):
         rows = self._prop_list.rowCount()

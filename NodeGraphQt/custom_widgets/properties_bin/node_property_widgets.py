@@ -87,6 +87,9 @@ class _PropertiesContainer(QtWidgets.QWidget):
         layout = QtWidgets.QVBoxLayout(self)
         layout.setAlignment(QtCore.Qt.AlignTop)
         layout.addLayout(self.__layout)
+        
+        verticalSpacer = QtWidgets.QSpacerItem(20, 40, QtWidgets.QSizePolicy.Policy.Minimum, QtWidgets.QSizePolicy.Policy.Expanding)
+        layout.addItem(verticalSpacer)
 
     def __repr__(self):
         return '<{} object at {}>'.format(
@@ -318,7 +321,13 @@ class NodePropWidget(QtWidgets.QWidget):
         if name in self.__tab_windows.keys():
             raise AssertionError('Tab name {} already taken!'.format(name))
         self.__tab_windows[name] = _PropertiesContainer(self)
-        self.__tab.addTab(self.__tab_windows[name], name)
+
+        # Create a QScrollArea
+        scroll_area = QtWidgets.QScrollArea()
+        scroll_area.setWidgetResizable(True)  # Make the scroll area resizable
+        scroll_area.setWidget(self.__tab_windows[name])    # Set the main widget as the scroll area widget
+
+        self.__tab.addTab(scroll_area, name)
         return self.__tab_windows[name]
 
     def get_widget(self, name):
